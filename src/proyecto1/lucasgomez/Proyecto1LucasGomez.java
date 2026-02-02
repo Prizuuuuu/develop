@@ -12,19 +12,20 @@ public class Proyecto1LucasGomez {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 // 1. Crear la Ventana
-                Dashboard ventana = new Dashboard();
+                clases.Dashboard ventana = new clases.Dashboard();
                 ventana.setVisible(true);
                 
-                // 2. Crear el Reloj y darle la referencia de la ventana
-                Reloj reloj = new Reloj(ventana);
+                // 2. Crear el Sistema Operativo (Le pasamos la ventana)
+                // OJO: Si te marca error aquí, es porque falta importar la clase.
+                clases.SistemaOperativo so = new clases.SistemaOperativo(ventana);
                 
-                // 3. Arrancar el hilo del reloj (se quedará esperando en "pausa")
-                reloj.start();
+                // 3. Crear el Reloj (Le pasamos la ventana Y el sistema operativo)
+                clases.Reloj reloj = new clases.Reloj(ventana, so);
                 
-                // 4. Conectar el botón "INICIAR SIMULACIÓN"
-                ventana.getBtnIniciar().addActionListener(new ActionListener() {
+                // 4. Configurar el Botón para Iniciar/Pausar
+                ventana.getBtnIniciar().addActionListener(new java.awt.event.ActionListener() {
                     @Override
-                    public void actionPerformed(ActionEvent e) {
+                    public void actionPerformed(java.awt.event.ActionEvent e) {
                         if (ventana.getBtnIniciar().getText().equals("INICIAR SIMULACIÓN")) {
                             reloj.iniciar();
                             ventana.getBtnIniciar().setText("PAUSAR");
@@ -34,6 +35,9 @@ public class Proyecto1LucasGomez {
                         }
                     }
                 });
+                
+                // 5. Arrancar el hilo en segundo plano
+                reloj.start();
             }
         });
     }

@@ -8,7 +8,7 @@
  */
 package clases;
 
-// Nodo genérico para poder guardar cualquier cosa (Procesos, números, etc.)
+// Nodo genérico para poder guardar cualquier cosa 
 public class Nodo<T> {
     private T contenido;
     private Nodo<T> pNext;

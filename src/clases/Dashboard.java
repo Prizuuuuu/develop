@@ -7,10 +7,9 @@ public class Dashboard extends JFrame {
 
     // --- Componentes Globales ---
     private JLabel lblReloj;
-    private JLabel lblEstadoCPU; // Para decir "User Mode" o "Kernel Mode"
+    private JLabel lblEstadoCPU;
     
     // --- Áreas de visualización (Las usaremos desde el Sistema Operativo) ---
-    // Usamos JTextArea por ahora por simplicidad, luego podemos usar JTables si quieres más detalle
     private JTextArea txtColaListos;
     private JTextArea txtColaBloqueados;
     private JTextArea txtColaSuspendidos; // Listos-Suspendidos
@@ -31,13 +30,13 @@ public class Dashboard extends JFrame {
         setTitle("UNIMET-Sat RTOS: Monitor de Misión");
         setSize(1100, 750);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // Centrar en pantalla
+        setLocationRelativeTo(null); 
         setResizable(false);
     }
 
     private void initComponents() {
         setLayout(new BorderLayout(10, 10));
-        getContentPane().setBackground(new Color(20, 25, 30)); // Fondo oscuro estilo espacio
+        getContentPane().setBackground(new Color(20, 25, 30)); 
 
         // === 1. HEADER: Reloj y Estado ===
         JPanel pnlHeader = new JPanel(new GridLayout(1, 3));
@@ -61,18 +60,18 @@ public class Dashboard extends JFrame {
         add(pnlHeader, BorderLayout.NORTH);
 
         // === 2. CENTER: Las Colas y la CPU ===
-        JPanel pnlCentral = new JPanel(new GridLayout(2, 3, 15, 15)); // Grid 2 filas x 3 columnas
+        JPanel pnlCentral = new JPanel(new GridLayout(2, 3, 15, 15)); 
         pnlCentral.setOpaque(false);
         pnlCentral.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        // -- Fila Superior (Memoria Principal) --
+        // -- Fila Superior 
         txtColaListos = crearPanelCola(pnlCentral, "Cola de Listos (RAM)", Color.GREEN);
         txtCPU = crearPanelCola(pnlCentral, "CPU - Ejecución", Color.RED);
         txtColaBloqueados = crearPanelCola(pnlCentral, "Cola de Bloqueados (E/S)", Color.ORANGE);
 
-        // -- Fila Inferior (Memoria Secundaria / Disco) --
+        // -- Fila Inferior 
         txtColaSuspendidos = crearPanelCola(pnlCentral, "Listos-Suspendidos (Swap)", Color.GRAY);
-        JTextArea txtLogs = crearPanelCola(pnlCentral, "Log del Sistema", Color.WHITE); // Panel extra para logs
+        JTextArea txtLogs = crearPanelCola(pnlCentral, "Log del Sistema", Color.WHITE); 
         txtColaBloqSusp = crearPanelCola(pnlCentral, "Bloqueados-Suspendidos (Swap)", Color.GRAY);
 
         add(pnlCentral, BorderLayout.CENTER);

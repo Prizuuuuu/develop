@@ -4,13 +4,15 @@ public class Reloj extends Thread {
     private Dashboard gui; // Referencia a la interfaz para poder actualizarla
     private int ciclos;    // Contador de tiempo global
     private boolean activo;
+    private SistemaOperativo so;
     
     // Configurable: Cuánto dura un ciclo en la vida real (en milisegundos)
     // El PDF pide poder modificar esto [cite: 252]
     private int tiempoCiclo = 1000; 
 
-    public Reloj(Dashboard gui) {
+    public Reloj(Dashboard gui, SistemaOperativo so) {
         this.gui = gui;
+        this.so = so;        // <--- ¡ESTA es la línea clave! Aquí guardamos la conexión.
         this.ciclos = 0;
         this.activo = false;
     }
@@ -23,14 +25,12 @@ public class Reloj extends Thread {
                     // 1. Actualizar el contador interno
                     ciclos++;
                     
-                    // 2. Actualizar la Interfaz Gráfica (El JLabel del header)
-                    // Usamos SwingUtilities para no congelar la ventana
+                    so.ejecutarCiclo();
+                    
+                    // 2. Actualizar la Interfaz Gráfica
                     javax.swing.SwingUtilities.invokeLater(() -> {
                         gui.getLblReloj().setText("TIEMPO MISIÓN: " + ciclos + " ciclos");
                     });
-                    
-                    // 3. Aquí pronto llamaremos al Planificador para que revise las colas
-                    // planificador.ejecutarCiclo(); (Pendiente para la próxima fase)
 
                     // 4. Esperar lo que dure el ciclo (Simulación de tiempo)
                     Thread.sleep(tiempoCiclo);

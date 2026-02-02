@@ -41,7 +41,7 @@ public class Cola<T> {
         pFirst = pFirst.getpNext();
         size--;
         
-        if (esVacia()) { // Si quedó vacía, pLast también es null
+        if (esVacia()) { 
             pLast = null;
         }
         return dato;
@@ -59,4 +59,16 @@ public class Cola<T> {
     public int getSize() {
         return size;
     }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        Nodo<T> temp = pFirst; 
+        while (temp != null) {
+            sb.append(temp.getContenido().toString()).append("\n");
+            temp = temp.getpNext(); // Avanzamos al siguiente
+        }
+        return sb.toString();
+    }
+    
 }

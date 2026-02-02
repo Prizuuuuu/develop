@@ -1,65 +1,40 @@
 package clases;
 
 public class PCB {
-    // Generador de IDs únicos (autoincremental)
-    private static int contadorGlobal = 0;
+    private static int contadorId = 1; // Para autogenerar IDs (1, 2, 3...)
     
-    // Atributos requeridos por el PDF
     private int id;
-    private String nombre; // Ej: "P_Telemetry"
-    private String estado; // Nuevo, Listo, Ejecucion, Bloqueado, Terminado
-    
-    // Registros simulados (se incrementan linealmente según PDF)
+    private String nombre;
     private int programCounter; // PC
-    private int mar; // Memory Address Register
-    
-    // Planificación
-    private int prioridad; // 1 es alta, 3 es baja (ejemplo)
-    private int deadline; // Tiempo límite en ciclos
-    
-    // Control de ejecución
+    private int mar;            // Memory Address Register
+    private String estado;      // New, Ready, Running, Blocked, Exit
+    private int prioridad;      // 1 (Alta) a 3 (Baja) - Según PDF
+    private int deadline;       // Ciclo límite para terminar
     private int instruccionesTotales;
-    private int instruccionesEjecutadas; // Para saber cuándo termina
-    private int cicloLlegada; // Para métricas de espera
-
-    // Constructor
-    public PCB(String nombre, int prioridad, int instruccionesTotales, int deadline, int cicloLlegada) {
-        this.id = ++contadorGlobal;
+    
+    // Constructor para procesos aleatorios
+    public PCB(String nombre, int instrucciones, int prioridad, int deadline) {
+        this.id = contadorId++;
         this.nombre = nombre;
+        this.instruccionesTotales = instrucciones;
         this.prioridad = prioridad;
-        this.instruccionesTotales = instruccionesTotales;
         this.deadline = deadline;
-        this.cicloLlegada = cicloLlegada;
         
-        // Valores iniciales
-        this.estado = "Nuevo";
+        // Valores iniciales por defecto
         this.programCounter = 0;
         this.mar = 0;
-        this.instruccionesEjecutadas = 0;
+        this.estado = "NEW";
     }
 
-    // --- Lógica del Sistema ---
-    
-    // Simula la ejecución de 1 instrucción (1 ciclo)
-    public void ejecutar() {
-        this.programCounter++;
-        this.mar++;
-        this.instruccionesEjecutadas++;
+    // --- Método vital para ver el proceso en la pantalla ---
+    // Esto es lo que se imprimirá en los cuadros verdes
+    @Override
+    public String toString() {
+        return String.format("[ID:%03d] %-15s | PC:%02d | Pri:%d", id, nombre, programCounter, prioridad);
     }
     
-    // Verifica si ya terminó
-    public boolean haTerminado() {
-        return instruccionesEjecutadas >= instruccionesTotales;
-    }
-
-    // --- Getters y Setters necesarios para la GUI ---
+    // Getters necesarios
     public int getId() { return id; }
     public String getNombre() { return nombre; }
-    public String getEstado() { return estado; }
-    public void setEstado(String estado) { this.estado = estado; }
     public int getPrioridad() { return prioridad; }
-    public int getProgramCounter() { return programCounter; }
-    public int getMar() { return mar; }
-    public int getDeadline() { return deadline; }
-    public void setDeadline(int deadline) { this.deadline = deadline; } // Algunos algoritmos lo modifican
 }
