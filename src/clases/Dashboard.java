@@ -134,4 +134,8 @@ public class Dashboard extends JFrame {
     public javax.swing.JTextArea getTxtCPU() {
         return txtCPU;
     }
+    
+    public javax.swing.JTextArea getTxtColaBloqueados(){
+        return txtColaBloqueados;
+    }
 }

@@ -4,12 +4,14 @@ public class SistemaOperativo {
 
     private Dashboard gui;
     private Cola<PCB> colaListos;
-    private PCB procesoEnCPU; // <--- Nuevo: ¿Quién está en la silla roja?
+    private Cola<PCB> colaBloqueados;
+    private PCB procesoEnCPU;
     
     public SistemaOperativo(Dashboard gui) {
         this.gui = gui;
         this.colaListos = new Cola<>();
-        this.procesoEnCPU = null; // Al inicio no hay nadie
+        this.colaBloqueados = new Cola();
+        this.procesoEnCPU = null;
         initSistema();
     }
     
@@ -26,7 +28,6 @@ public class SistemaOperativo {
         // 1. Planificador (Scheduler): ¿El CPU está libre?
         if (procesoEnCPU == null) {
             if (!colaListos.esVacia()) {
-                // Sacamos al primero de la fila y lo pasamos al CPU
                 procesoEnCPU = colaListos.desencolar();
                 procesoEnCPU.setEstado("RUNNING");
             }
@@ -58,6 +59,11 @@ public class SistemaOperativo {
                 gui.getTxtCPU().setText(procesoEnCPU.toString());
             } else {
                 gui.getTxtCPU().setText("[Esperando procesos...]");
+            }
+            if (colaBloqueados.esVacia()) {
+                gui.getTxtColaBloqueados().setText("[Cola vacía]");
+            } else {
+                gui.getTxtColaBloqueados().setText(colaBloqueados.toString());
             }
         }
     }
