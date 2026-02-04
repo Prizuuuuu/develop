@@ -16,10 +16,9 @@ public class Proyecto1LucasGomez {
                 ventana.setVisible(true);
                 
                 // 2. Crear el Sistema Operativo (Le pasamos la ventana)
-                // OJO: Si te marca error aquí, es porque falta importar la clase.
                 clases.SistemaOperativo so = new clases.SistemaOperativo(ventana);
                 
-                // 3. Crear el Reloj (Le pasamos la ventana Y el sistema operativo)
+                // 3. Crear el Reloj 
                 clases.Reloj reloj = new clases.Reloj(ventana, so);
                 
                 // 4. Configurar el Botón para Iniciar/Pausar

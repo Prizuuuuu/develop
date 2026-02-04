@@ -66,7 +66,7 @@ public class Cola<T> {
         Nodo<T> temp = pFirst; 
         while (temp != null) {
             sb.append(temp.getContenido().toString()).append("\n");
-            temp = temp.getpNext(); // Avanzamos al siguiente
+            temp = temp.getpNext();
         }
         return sb.toString();
     }

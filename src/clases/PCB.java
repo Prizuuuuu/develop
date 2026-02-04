@@ -27,7 +27,6 @@ public class PCB {
     }
 
     // --- Método vital para ver el proceso en la pantalla ---
-    // Esto es lo que se imprimirá en los cuadros verdes
     @Override
     public String toString() {
         return String.format("[ID:%03d] %-15s | PC:%02d | Pri:%d", id, nombre, programCounter, prioridad);
@@ -37,4 +36,21 @@ public class PCB {
     public int getId() { return id; }
     public String getNombre() { return nombre; }
     public int getPrioridad() { return prioridad; }
+    
+    public void avanzarInstruccion() {
+        this.programCounter++;
+        this.instruccionesTotales--; 
+    }
+    
+    public void setEstado(String nuevoEstado) {
+        this.estado = nuevoEstado;
+    }
+    
+    public String getEstado() {
+        return estado;
+    }
+    
+    public int getInstruccionesTotales() {
+        return instruccionesTotales;
+    }
 }

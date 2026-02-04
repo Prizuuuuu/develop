@@ -9,7 +9,7 @@ public class Dashboard extends JFrame {
     private JLabel lblReloj;
     private JLabel lblEstadoCPU;
     
-    // --- Áreas de visualización (Las usaremos desde el Sistema Operativo) ---
+    // --- Áreas de visualización ---
     private JTextArea txtColaListos;
     private JTextArea txtColaBloqueados;
     private JTextArea txtColaSuspendidos; // Listos-Suspendidos
@@ -128,5 +128,10 @@ public class Dashboard extends JFrame {
         return lblReloj;
     }
 
+// --- MÉTODOS DE ACCESO (GETTERS) ---
+    // Esto permite que otras clases toquen los componentes de la ventana
 
+    public javax.swing.JTextArea getTxtCPU() {
+        return txtCPU;
+    }
 }

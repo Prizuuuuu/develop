@@ -7,12 +7,11 @@ public class Reloj extends Thread {
     private SistemaOperativo so;
     
     // Configurable: Cuánto dura un ciclo en la vida real (en milisegundos)
-    // El PDF pide poder modificar esto [cite: 252]
     private int tiempoCiclo = 1000; 
 
     public Reloj(Dashboard gui, SistemaOperativo so) {
         this.gui = gui;
-        this.so = so;        // <--- ¡ESTA es la línea clave! Aquí guardamos la conexión.
+        this.so = so;
         this.ciclos = 0;
         this.activo = false;
     }
