@@ -53,4 +53,14 @@ public class PCB {
     public int getInstruccionesTotales() {
         return instruccionesTotales;
     }
+    
+    public void ejecutar() {
+        if (this.instruccionesTotales > 0) {
+            this.instruccionesTotales--;  // <--- Aquí estaba el detalle
+        }
+    }
+
+    public int getInstruccionesRestantes() {
+        return this.instruccionesTotales; // <--- Y aquí también
+    }
 }

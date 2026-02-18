@@ -15,6 +15,7 @@ public class Dashboard extends JFrame {
     private JTextArea txtColaSuspendidos; // Listos-Suspendidos
     private JTextArea txtColaBloqSusp;    // Bloqueados-Suspendidos
     private JTextArea txtCPU;             // Proceso en ejecución
+    private JTextArea txtLogs;
     
     // --- Botones de Control ---
     private JButton btnIniciar;
@@ -71,7 +72,7 @@ public class Dashboard extends JFrame {
 
         // -- Fila Inferior 
         txtColaSuspendidos = crearPanelCola(pnlCentral, "Listos-Suspendidos (Swap)", Color.GRAY);
-        JTextArea txtLogs = crearPanelCola(pnlCentral, "Log del Sistema", Color.WHITE); 
+        txtLogs = crearPanelCola(pnlCentral, "Log del Sistema", Color.WHITE); 
         txtColaBloqSusp = crearPanelCola(pnlCentral, "Bloqueados-Suspendidos (Swap)", Color.GRAY);
 
         add(pnlCentral, BorderLayout.CENTER);
@@ -141,6 +142,22 @@ public class Dashboard extends JFrame {
     
     public javax.swing.JButton getBtnInterrupcion() {
         return btnInterrupcion;
+    }
+    
+    public void imprimirLog(String mensaje) {
+        if (txtLogs != null) {
+            txtLogs.append(mensaje + "\n");
+            // Hace que baje automáticamente
+            txtLogs.setCaretPosition(txtLogs.getDocument().getLength());
+        }
+    }
+    
+    public javax.swing.JTextArea getTxtColaSuspendidos() {
+        return txtColaSuspendidos;
+    }
+
+    public javax.swing.JTextArea getTxtColaBloqSusp() {
+        return txtColaBloqSusp;
     }
 }
 

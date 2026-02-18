@@ -5,6 +5,8 @@ public class SistemaOperativo {
     private Dashboard gui;
     private Cola<PCB> colaListos;
     private Cola<PCB> colaBloqueados;
+    private Cola<PCB> colaListosSuspendidos;
+    private Cola<PCB> colaBloqueadosSuspendidos;
     private PCB procesoEnCPU;
     
     public SistemaOperativo(Dashboard gui) {
@@ -20,36 +22,87 @@ public class SistemaOperativo {
         colaListos.encolar(new PCB("System_Boot", 10, 1, 50));
         colaListos.encolar(new PCB("Antenna_Check", 5, 2, 60));
         colaListos.encolar(new PCB("Beacon_Signal", 20, 1, 100));
+        this.colaListosSuspendidos = new Cola<>();
+    this.colaBloqueadosSuspendidos = new Cola<>();
         if (gui != null) {
             gui.getBtnInterrupcion().addActionListener(e -> {
                 bloquearProceso();
+                gui.imprimirLog("!! ALERTA: Interrupción de Hardware (Meteorito)");
             });
         }
+        if(gui != null) gui.imprimirLog(">> Sistema Iniciado: Procesos cargados en RAM.");
         actualizarGUI();
     }
     
     public void ejecutarCiclo() {
-        // 1. Planificador (Scheduler): ¿El CPU está libre?
+        
+        // -------------------------------------------------------------
+        // 1. GESTOR DE TRÁFICO (BLOQUEADOS Y SWAP) - ¡AL PRINCIPIO!
+        // -------------------------------------------------------------
+        
+        // A. Revisar Bloqueados (Amarillo) -> Mover a RAM o Disco
+        if (!colaBloqueados.esVacia()) {
+            // Aumentamos probabilidad al 50% para que lo veas moverse YA
+            if (Math.random() < 0.5) { 
+                PCB p = colaBloqueados.desencolar();
+                
+                // 50% de probabilidad: Vuelve a RAM (Verde)
+                if (Math.random() < 0.5) {
+                    p.setEstado("READY");
+                    colaListos.encolar(p);
+                    gui.imprimirLog("✅ [I/O] Fin de espera. Vuelve a Listos: " + p.getNombre());
+                } else {
+                    // 50% de probabilidad: Se va a DISCO (Gris Abajo-Der)
+                    colaBloqueadosSuspendidos.encolar(p);
+                    gui.imprimirLog("⬇ [SWAP] Llevando a Disco: " + p.getNombre());
+                }
+            }
+        }
+
+        // B. Disco Duro: De Bloq-Susp a Listo-Susp (Derecha a Izquierda abajo)
+        if (!colaBloqueadosSuspendidos.esVacia() && Math.random() < 0.2) { 
+            PCB p = colaBloqueadosSuspendidos.desencolar();
+            colaListosSuspendidos.encolar(p);
+            gui.imprimirLog("💾 [DISCO] Transferencia interna completada: " + p.getNombre());
+        }
+
+        // C. Swap-In: De Disco a RAM (Subir al Verde)
+        if (!colaListosSuspendidos.esVacia() && Math.random() < 0.2) {
+            PCB p = colaListosSuspendidos.desencolar();
+            p.setEstado("READY");
+            colaListos.encolar(p);
+            gui.imprimirLog("⬆ [SWAP] ¡Recuperado a RAM!: " + p.getNombre());
+        }
+
+        // -------------------------------------------------------------
+        // 2. PLANIFICADOR DE CPU (LO QUE YA TENÍAS)
+        // -------------------------------------------------------------
+        
+        // Si el CPU está libre, busca trabajo
         if (procesoEnCPU == null) {
             if (!colaListos.esVacia()) {
                 procesoEnCPU = colaListos.desencolar();
                 procesoEnCPU.setEstado("RUNNING");
+                gui.imprimirLog("[CPU] Ejecutando: " + procesoEnCPU.getNombre());
+            } else {
+                // Si no hay nada en RAM, el CPU descansa
+                gui.getTxtCPU().setText("[Esperando procesos...]"); 
             }
         }
-        
-        // 2. Ejecutar proceso (CPU)
+
+        // Si hay un proceso, lo ejecuta
         if (procesoEnCPU != null) {
-            procesoEnCPU.avanzarInstruccion();
+            procesoEnCPU.ejecutar(); // Resta 1 instrucción
             
-            // Si termina, lo sacamos (Simulación básica de salida)
-            // Por ahora, si llega a 10 instrucciones, lo matamos para probar
-            if (procesoEnCPU.getInstruccionesTotales() <= 0) {
-                 procesoEnCPU.setEstado("EXIT");
-                 procesoEnCPU = null; // CPU queda libre para el siguiente
+            // Si terminó
+            if (procesoEnCPU.getInstruccionesRestantes() <= 0) {
+                procesoEnCPU.setEstado("TERMINATED");
+                gui.imprimirLog("🏁 [FIN] Proceso terminado: " + procesoEnCPU.getNombre());
+                procesoEnCPU = null; // Liberar CPU
             }
         }
         
-        // 3. Refrescar pantallas
+        // Actualizar pantalla siempre al final
         actualizarGUI();
     }
     
@@ -86,6 +139,11 @@ public class SistemaOperativo {
             } else {
                 gui.getTxtColaBloqueados().setText(colaBloqueados.toString());
             }
+            // Paneles de Swap
+        if (gui != null) {
+            gui.getTxtColaSuspendidos().setText(colaListosSuspendidos.toString());
+            gui.getTxtColaBloqSusp().setText(colaBloqueadosSuspendidos.toString());
+        }
         }
     }
 }
