@@ -20,7 +20,11 @@ public class SistemaOperativo {
         colaListos.encolar(new PCB("System_Boot", 10, 1, 50));
         colaListos.encolar(new PCB("Antenna_Check", 5, 2, 60));
         colaListos.encolar(new PCB("Beacon_Signal", 20, 1, 100));
-        
+        if (gui != null) {
+            gui.getBtnInterrupcion().addActionListener(e -> {
+                bloquearProceso();
+            });
+        }
         actualizarGUI();
     }
     
@@ -47,6 +51,23 @@ public class SistemaOperativo {
         
         // 3. Refrescar pantallas
         actualizarGUI();
+    }
+    
+    public void bloquearProceso() {
+        // Solo podemos bloquear si hay alguien en el CPU
+        if (procesoEnCPU != null) {
+            // 1. Cambiamos su estado a BLOQUEADO
+            procesoEnCPU.setEstado("BLOCKED");
+            
+            // 2. Lo mandamos a la cola amarilla
+            colaBloqueados.encolar(procesoEnCPU);
+            
+            // 3. Liberamos el CPU
+            procesoEnCPU = null;
+            
+            // 4. Actualizamos la pantalla para ver el cambio inmediato
+            actualizarGUI();
+        }
     }
     
     private void actualizarGUI() {

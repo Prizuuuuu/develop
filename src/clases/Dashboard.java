@@ -138,4 +138,9 @@ public class Dashboard extends JFrame {
     public javax.swing.JTextArea getTxtColaBloqueados(){
         return txtColaBloqueados;
     }
+    
+    public javax.swing.JButton getBtnInterrupcion() {
+        return btnInterrupcion;
+    }
 }
+
