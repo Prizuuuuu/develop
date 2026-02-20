@@ -9,6 +9,12 @@ public class SistemaOperativo {
     private Cola<PCB> colaBloqueadosSuspendidos;
     private PCB procesoEnCPU;
     
+    // --- VARIABLES DEL RELOJ Y CONTROL (HILOS) ---
+    private int relojGlobal = 0;          // Cuenta los ciclos totales
+    private int duracionCiclo = 1000;     // 1000 ms = 1 segundo por defecto
+    private boolean simulacionActiva = false; // Controla si el hilo corre o se detiene
+    private Thread hiloReloj;             
+    
     public SistemaOperativo(Dashboard gui) {
         this.gui = gui;
         this.colaListos = new Cola<>();
@@ -23,26 +29,84 @@ public class SistemaOperativo {
         colaListos.encolar(new PCB("Antenna_Check", 5, 2, 60));
         colaListos.encolar(new PCB("Beacon_Signal", 20, 1, 100));
         this.colaListosSuspendidos = new Cola<>();
-    this.colaBloqueadosSuspendidos = new Cola<>();
+        this.colaBloqueadosSuspendidos = new Cola<>();
+        
         if (gui != null) {
+            // Acción del botón Meteorito (Lo que ya tenías)
             gui.getBtnInterrupcion().addActionListener(e -> {
                 bloquearProceso();
                 gui.imprimirLog("!! ALERTA: Interrupción de Hardware (Meteorito)");
             });
+            
+            // --- NUEVO: PASO 2.3 - Acción del botón Iniciar ---
+            gui.getBtnIniciar().addActionListener(e -> {
+                iniciarSimulacion(); 
+            });
         }
+        
         if(gui != null) gui.imprimirLog(">> Sistema Iniciado: Procesos cargados en RAM.");
         actualizarGUI();
+    }
+    
+    // --- MÉTODOS DEL HILO (THREAD) ---
+
+    public void iniciarSimulacion() {
+        if (!simulacionActiva) { 
+            simulacionActiva = true;
+            
+            // Creación del Hilo 
+            hiloReloj = new Thread(() -> {
+                while (simulacionActiva) {
+                    try {
+                        relojGlobal++; // Aumenta el reloj global
+                        
+                        if (gui != null) {
+                            gui.imprimirLog("=====================================");
+                            gui.imprimirLog("⏱️ INICIANDO CICLO DE RELOJ: " + relojGlobal);
+                        }
+                        
+                        ejecutarCiclo(); 
+                        
+                        Thread.sleep(duracionCiclo); 
+                        
+                    } catch (InterruptedException e) {
+                        gui.imprimirLog("⚠️ Error en el hilo del reloj: " + e.getMessage());
+                    }
+                }
+            });
+            
+            hiloReloj.start(); // Arranca el motor
+            gui.imprimirLog("🚀 SIMULACIÓN INICIADA");
+        }
+    }
+
+    public void detenerSimulacion() {
+        simulacionActiva = false;
+        if (gui != null) {
+            gui.imprimirLog("🛑 SIMULACIÓN DETENIDA");
+        }
+    }
+
+    public void cambiarVelocidad(int milisegundos) {
+        this.duracionCiclo = milisegundos;
+        if (gui != null) {
+            gui.imprimirLog("⚙️ Velocidad cambiada a " + milisegundos + " ms por ciclo.");
+        }
+    }
+    
+    public int getRelojGlobal() {
+        return relojGlobal;
     }
     
     public void ejecutarCiclo() {
         
         // -------------------------------------------------------------
-        // 1. GESTOR DE TRÁFICO (BLOQUEADOS Y SWAP) - ¡AL PRINCIPIO!
+        // 1. GESTOR DE TRÁFICO (BLOQUEADOS Y SWAP) 
         // -------------------------------------------------------------
         
         // A. Revisar Bloqueados (Amarillo) -> Mover a RAM o Disco
         if (!colaBloqueados.esVacia()) {
-            // Aumentamos probabilidad al 50% para que lo veas moverse YA
+            // Aumentamos probabilidad al 50% 
             if (Math.random() < 0.5) { 
                 PCB p = colaBloqueados.desencolar();
                 
@@ -75,7 +139,7 @@ public class SistemaOperativo {
         }
 
         // -------------------------------------------------------------
-        // 2. PLANIFICADOR DE CPU (LO QUE YA TENÍAS)
+        // 2. PLANIFICADOR DE CPU 
         // -------------------------------------------------------------
         
         // Si el CPU está libre, busca trabajo

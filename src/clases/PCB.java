@@ -1,3 +1,5 @@
+package clases;
+
 public class PCB {
     
     // --- VARIABLES GLOBALES PARA AUTOGENERAR ID ---

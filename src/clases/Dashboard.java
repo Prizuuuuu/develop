@@ -99,7 +99,7 @@ public class Dashboard extends JFrame {
         add(pnlFooter, BorderLayout.SOUTH);
     }
 
-    // Método auxiliar para no repetir código creando paneles
+    // Método auxiliar creando paneles
     private JTextArea crearPanelCola(JPanel padre, String titulo, Color colorBorde) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
