@@ -13,7 +13,10 @@ public class SistemaOperativo {
     private int relojGlobal = 0;          // Cuenta los ciclos totales
     private int duracionCiclo = 1000;     // 1000 ms = 1 segundo por defecto
     private boolean simulacionActiva = false; // Controla si el hilo corre o se detiene
-    private Thread hiloReloj;             
+    private Thread hiloReloj; 
+    
+    // --- VARIABLES DE MEMORIA ---
+    private final int LIMITE_MEMORIA = 5; // Máximo 5 procesos permitidos en RAM a la vez
     
     public SistemaOperativo(Dashboard gui) {
         this.gui = gui;
@@ -23,16 +26,39 @@ public class SistemaOperativo {
         initSistema();
     }
     
+    public void admitirProceso(PCB p) {
+        int procesosEnRAM = colaListos.getTamano() + colaBloqueados.getTamano();
+        if (procesoEnCPU != null) procesosEnRAM++; // Sumamos el que está en CPU
+
+        if (procesosEnRAM < LIMITE_MEMORIA) {
+            // Hay espacio: Va a RAM (Verde)
+            p.setEstado("READY");
+            colaListos.encolar(p);
+            if(gui != null) gui.imprimirLog("🟢 [RAM] Nuevo proceso en RAM: " + p.getNombre());
+        } else {
+            // No hay espacio: Va a Disco (Swap - Listo Suspendido)
+            p.setEstado("READY_SUSPENDED");
+            colaListosSuspendidos.encolar(p);
+            if(gui != null) gui.imprimirLog("💾 [DISCO] Memoria Llena. Cae en Suspendido: " + p.getNombre());
+        }
+        actualizarGUI();
+    }
+    
     private void initSistema() {
-        // Procesos de prueba
-        colaListos.encolar(new PCB("System_Boot", 10, 1, 50));
-        colaListos.encolar(new PCB("Antenna_Check", 5, 2, 60));
-        colaListos.encolar(new PCB("Beacon_Signal", 20, 1, 100));
+        // Inicializar colas de Swap que faltaban arriba
+        this.colaListosSuspendidos = new Cola<>();
+        this.colaBloqueadosSuspendidos = new Cola<>();
+
+        // Procesos de prueba usando el Admisionador
+        admitirProceso(new PCB("System_Boot", 10, 1, 50));
+        admitirProceso(new PCB("Antenna_Check", 5, 2, 60));
+        admitirProceso(new PCB("Beacon_Signal", 20, 1, 100));
+        
         this.colaListosSuspendidos = new Cola<>();
         this.colaBloqueadosSuspendidos = new Cola<>();
         
         if (gui != null) {
-            // Acción del botón Meteorito (Lo que ya tenías)
+            // Acción del botón Meteorito
             gui.getBtnInterrupcion().addActionListener(e -> {
                 bloquearProceso();
                 gui.imprimirLog("!! ALERTA: Interrupción de Hardware (Meteorito)");
@@ -104,38 +130,24 @@ public class SistemaOperativo {
         // 1. GESTOR DE TRÁFICO (BLOQUEADOS Y SWAP) 
         // -------------------------------------------------------------
         
-        // A. Revisar Bloqueados (Amarillo) -> Mover a RAM o Disco
-        if (!colaBloqueados.esVacia()) {
-            // Aumentamos probabilidad al 50% 
-            if (Math.random() < 0.5) { 
-                PCB p = colaBloqueados.desencolar();
-                
-                // 50% de probabilidad: Vuelve a RAM (Verde)
-                if (Math.random() < 0.5) {
-                    p.setEstado("READY");
-                    colaListos.encolar(p);
-                    gui.imprimirLog("✅ [I/O] Fin de espera. Vuelve a Listos: " + p.getNombre());
-                } else {
-                    // 50% de probabilidad: Se va a DISCO (Gris Abajo-Der)
-                    colaBloqueadosSuspendidos.encolar(p);
-                    gui.imprimirLog("⬇ [SWAP] Llevando a Disco: " + p.getNombre());
-                }
-            }
-        }
+        // A. Calcular ocupación actual de RAM
+        int procesosEnRAM = colaListos.getTamano() + colaBloqueados.getTamano() + (procesoEnCPU != null ? 1 : 0);
 
-        // B. Disco Duro: De Bloq-Susp a Listo-Susp (Derecha a Izquierda abajo)
-        if (!colaBloqueadosSuspendidos.esVacia() && Math.random() < 0.2) { 
-            PCB p = colaBloqueadosSuspendidos.desencolar();
-            colaListosSuspendidos.encolar(p);
-            gui.imprimirLog("💾 [DISCO] Transferencia interna completada: " + p.getNombre());
-        }
-
-        // C. Swap-In: De Disco a RAM (Subir al Verde)
-        if (!colaListosSuspendidos.esVacia() && Math.random() < 0.2) {
+        // B. Swap-In: Si hay espacio en RAM y hay procesos castigados en Disco, los subimos a RAM
+        if (procesosEnRAM < LIMITE_MEMORIA && !colaListosSuspendidos.esVacia()) {
             PCB p = colaListosSuspendidos.desencolar();
             p.setEstado("READY");
             colaListos.encolar(p);
-            gui.imprimirLog("⬆ [SWAP] ¡Recuperado a RAM!: " + p.getNombre());
+            procesosEnRAM++; // Aumentamos la cuenta
+            if (gui != null) gui.imprimirLog("⬆ [SWAP-IN] Recuperado a RAM: " + p.getNombre());
+        }
+
+        // C. Simular fin de bloqueo (Solo para prueba temporal: 20% de probabilidad de que un bloqueado se libere)
+        if (!colaBloqueados.esVacia() && Math.random() < 0.2) { 
+            PCB p = colaBloqueados.desencolar();
+            p.setEstado("READY");
+            colaListos.encolar(p);
+            if (gui != null) gui.imprimirLog("✅ [I/O] Fin de espera. Vuelve a Listos: " + p.getNombre());
         }
 
         // -------------------------------------------------------------
