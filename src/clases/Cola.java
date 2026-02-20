@@ -70,5 +70,7 @@ public class Cola<T> {
         }
         return sb.toString();
     }
-    
+    public int getTamano() {
+        return this.size; 
+    }
 }

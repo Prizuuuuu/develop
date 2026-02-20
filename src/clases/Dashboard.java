@@ -159,5 +159,8 @@ public class Dashboard extends JFrame {
     public javax.swing.JTextArea getTxtColaBloqSusp() {
         return txtColaBloqSusp;
     }
+    public JComboBox<String> getCmbAlgoritmos() {
+        return cmbAlgoritmos;
+    }
 }
 

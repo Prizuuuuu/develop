@@ -18,6 +18,11 @@ public class SistemaOperativo {
     // --- VARIABLES DE MEMORIA ---
     private final int LIMITE_MEMORIA = 5; // Máximo 5 procesos permitidos en RAM a la vez
     
+    // --- VARIABLES DE PLANIFICACIÓN (ALGORITMOS) ---
+    private String algoritmoActual = "FCFS"; // Algoritmo por defecto
+    private int quantumRR = 3;               // RR: 3 ciclos de tiempo en CPU
+    private int contadorQuantum = 0;         // RR: Cuenta cuánto lleva el proceso actual
+    
     public SistemaOperativo(Dashboard gui) {
         this.gui = gui;
         this.colaListos = new Cola<>();
@@ -54,9 +59,6 @@ public class SistemaOperativo {
         admitirProceso(new PCB("Antenna_Check", 5, 2, 60));
         admitirProceso(new PCB("Beacon_Signal", 20, 1, 100));
         
-        this.colaListosSuspendidos = new Cola<>();
-        this.colaBloqueadosSuspendidos = new Cola<>();
-        
         if (gui != null) {
             // Acción del botón Meteorito
             gui.getBtnInterrupcion().addActionListener(e -> {
@@ -64,10 +66,19 @@ public class SistemaOperativo {
                 gui.imprimirLog("!! ALERTA: Interrupción de Hardware (Meteorito)");
             });
             
-            // --- NUEVO: PASO 2.3 - Acción del botón Iniciar ---
+            // Acción del botón Iniciar
             gui.getBtnIniciar().addActionListener(e -> {
                 iniciarSimulacion(); 
             });
+            
+            // Acción para el ComboBox de algoritmos
+            if (gui.getCmbAlgoritmos() != null) {
+                gui.getCmbAlgoritmos().addActionListener(e -> {
+                    algoritmoActual = gui.getCmbAlgoritmos().getSelectedItem().toString();
+                    gui.imprimirLog("🔄 ALGORITMO CAMBIADO A: " + algoritmoActual);
+                    contadorQuantum = 0; // Reiniciamos el reloj de RR por si acaso
+                });
+            }    
         }
         
         if(gui != null) gui.imprimirLog(">> Sistema Iniciado: Procesos cargados en RAM.");
@@ -96,13 +107,13 @@ public class SistemaOperativo {
                         Thread.sleep(duracionCiclo); 
                         
                     } catch (InterruptedException e) {
-                        gui.imprimirLog("⚠️ Error en el hilo del reloj: " + e.getMessage());
+                        if(gui != null) gui.imprimirLog("⚠️ Error en el hilo del reloj: " + e.getMessage());
                     }
                 }
             });
             
             hiloReloj.start(); // Arranca el motor
-            gui.imprimirLog("🚀 SIMULACIÓN INICIADA");
+            if(gui != null) gui.imprimirLog("🚀 SIMULACIÓN INICIADA");
         }
     }
 
@@ -122,6 +133,36 @@ public class SistemaOperativo {
     
     public int getRelojGlobal() {
         return relojGlobal;
+    }
+    
+    // Método especial para EDF: Extrae el proceso con el menor tiempo límite (sin romper la regla de no usar ArrayLists)
+    private PCB sacarProcesoMenorDeadline() {
+        if (colaListos.esVacia()) return null;
+        
+        PCB mejorProceso = colaListos.desencolar();
+        int menorDeadline = mejorProceso.getDeadline();
+        int tamano = colaListos.getTamano();
+        colaListos.encolar(mejorProceso); // Lo volvemos a meter para iniciar el ciclo
+        
+        // 1. Damos la vuelta a la cola buscando el menor deadline
+        for (int i = 1; i < tamano; i++) {
+            PCB p = colaListos.desencolar();
+            if (p.getDeadline() < menorDeadline) {
+                menorDeadline = p.getDeadline();
+                mejorProceso = p;
+            }
+            colaListos.encolar(p);
+        }
+        
+        // 2. Damos otra vuelta para extraer definitivamente al ganador
+        for (int i = 0; i < tamano; i++) {
+            PCB p = colaListos.desencolar();
+            if (p != mejorProceso) {
+                colaListos.encolar(p); // Si no es el ganador, vuelve a la cola
+            }
+        }
+        
+        return mejorProceso;
     }
     
     public void ejecutarCiclo() {
@@ -151,30 +192,58 @@ public class SistemaOperativo {
         }
 
         // -------------------------------------------------------------
-        // 2. PLANIFICADOR DE CPU 
+        // 2. PLANIFICADOR DE CPU (CON ALGORITMOS)
         // -------------------------------------------------------------
         
-        // Si el CPU está libre, busca trabajo
-        if (procesoEnCPU == null) {
-            if (!colaListos.esVacia()) {
-                procesoEnCPU = colaListos.desencolar();
-                procesoEnCPU.setEstado("RUNNING");
-                gui.imprimirLog("[CPU] Ejecutando: " + procesoEnCPU.getNombre());
-            } else {
-                // Si no hay nada en RAM, el CPU descansa
-                gui.getTxtCPU().setText("[Esperando procesos...]"); 
+        // --- A. ROUND ROBIN: PREEMPTION (Expropiación por tiempo) ---
+        if (algoritmoActual.contains("RR") || algoritmoActual.contains("Round")) {
+            if (procesoEnCPU != null) {
+                contadorQuantum++;
+                if (contadorQuantum >= quantumRR && procesoEnCPU.getInstruccionesRestantes() > 0) {
+                    // ¡Se le acabó el tiempo! Lo regresamos a la cola de listos
+                    procesoEnCPU.setEstado("READY");
+                    colaListos.encolar(procesoEnCPU);
+                    if(gui != null) gui.imprimirLog("⏱️ [RR] Fin de Quantum (3 ciclos). Vuelve a cola: " + procesoEnCPU.getNombre());
+                    procesoEnCPU = null; 
+                    contadorQuantum = 0; 
+                }
             }
         }
 
-        // Si hay un proceso, lo ejecuta
+        // --- B. ASIGNAR NUEVO PROCESO AL CPU ---
+        if (procesoEnCPU == null) {
+            if (!colaListos.esVacia()) {
+                
+                // ¡AQUÍ ESTÁ LA MAGIA DE LOS ALGORITMOS!
+                if (algoritmoActual.contains("EDF")) {
+                    procesoEnCPU = sacarProcesoMenorDeadline(); // Busca el más urgente
+                } else {
+                    procesoEnCPU = colaListos.desencolar(); // FCFS y RR toman el primero en la fila
+                }
+                
+                procesoEnCPU.setEstado("RUNNING");
+                contadorQuantum = 0; // Reiniciamos el reloj de RR
+                if(gui != null) gui.imprimirLog("⚙️ [" + algoritmoActual + "] CPU Ejecutando: " + procesoEnCPU.getNombre());
+                
+            } else {
+                if (gui != null) gui.getTxtCPU().setText("[Esperando procesos...]"); 
+            }
+        }
+
+        // --- C. EJECUCIÓN Y VALIDACIÓN DE LÍMITES (DEADLINE) ---
         if (procesoEnCPU != null) {
-            procesoEnCPU.ejecutar(); // Resta 1 instrucción
+            procesoEnCPU.ejecutar();  // Trabaja 1 ciclo
+            procesoEnCPU.envejecer(); // Acercándose a su deadline
             
-            // Si terminó
             if (procesoEnCPU.getInstruccionesRestantes() <= 0) {
                 procesoEnCPU.setEstado("TERMINATED");
-                gui.imprimirLog("🏁 [FIN] Proceso terminado: " + procesoEnCPU.getNombre());
-                procesoEnCPU = null; // Liberar CPU
+                if(gui != null) gui.imprimirLog("🏁 [FIN] Proceso terminado con éxito: " + procesoEnCPU.getNombre());
+                procesoEnCPU = null; 
+            } else if (procesoEnCPU.getDeadline() <= 0) {
+                // FALLO CRÍTICO: No logró terminar a tiempo
+                procesoEnCPU.setEstado("FAILED");
+                if(gui != null) gui.imprimirLog("❌ [FALLO DE MISIÓN] Deadline rebasado. Proceso abortado: " + procesoEnCPU.getNombre());
+                procesoEnCPU = null;
             }
         }
         
@@ -216,10 +285,8 @@ public class SistemaOperativo {
                 gui.getTxtColaBloqueados().setText(colaBloqueados.toString());
             }
             // Paneles de Swap
-        if (gui != null) {
             gui.getTxtColaSuspendidos().setText(colaListosSuspendidos.toString());
             gui.getTxtColaBloqSusp().setText(colaBloqueadosSuspendidos.toString());
-        }
         }
     }
 }
