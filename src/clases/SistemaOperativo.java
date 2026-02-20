@@ -247,6 +247,22 @@ public class SistemaOperativo {
             }
         }
         
+        // -------------------------------------------------------------
+        // 3. GENERADOR DINÁMICO DE PROCESOS (PASO 5)
+        // -------------------------------------------------------------
+        // 10% de probabilidad de que llegue una nueva tarea en cada ciclo
+        if (Math.random() < 0.10) {
+            int inst = (int) (Math.random() * 10) + 5;     // Entre 5 y 14 instrucciones
+            int prio = (int) (Math.random() * 5) + 1;      // Prioridad del 1 al 5
+            int dead = (int) (Math.random() * 50) + 30;    // Deadline entre 30 y 79
+            
+            PCB nuevaTarea = new PCB("Task_" + relojGlobal, inst, prio, dead);
+            if (gui != null) gui.imprimirLog("📡 [NUEVA TAREA] Señal recibida desde la Tierra...");
+            
+            // Usamos tu método admitirProceso para que el sistema decida si va a RAM o a Disco
+            admitirProceso(nuevaTarea);
+        }
+        
         // Actualizar pantalla siempre al final
         actualizarGUI();
     }
