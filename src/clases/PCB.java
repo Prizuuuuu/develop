@@ -1,66 +1,60 @@
-package clases;
-
 public class PCB {
-    private static int contadorId = 1; // Para autogenerar IDs (1, 2, 3...)
     
-    private int id;
+    // --- VARIABLES GLOBALES PARA AUTOGENERAR ID ---
+    private static int contadorGlobal = 1;
+
+    private String id;
     private String nombre;
-    private int programCounter; // PC
-    private int mar;            // Memory Address Register
-    private String estado;      // New, Ready, Running, Blocked, Exit
-    private int prioridad;      // 1 (Alta) a 3 (Baja) - Según PDF
-    private int deadline;       // Ciclo límite para terminar
-    private int instruccionesTotales;
+    private String status;
+    private int pc;          
+    private int mar;          
+    private int prioridad;
+    private int deadline;
     
-    // Constructor para procesos aleatorios
-    public PCB(String nombre, int instrucciones, int prioridad, int deadline) {
-        this.id = contadorId++;
+    private int instruccionesTotales; 
+
+    // --- CONSTRUCTOR ---
+    public PCB(String nombre, int instruccionesTotales, int prioridad, int deadline) {
+        this.id = "P" + String.format("%03d", contadorGlobal++); 
         this.nombre = nombre;
-        this.instruccionesTotales = instrucciones;
+        this.instruccionesTotales = instruccionesTotales;
         this.prioridad = prioridad;
         this.deadline = deadline;
         
-        // Valores iniciales por defecto
-        this.programCounter = 0;
+        this.status = "NEW"; 
+        this.pc = 0;
         this.mar = 0;
-        this.estado = "NEW";
     }
 
-    // --- Método vital para ver el proceso en la pantalla ---
-    @Override
-    public String toString() {
-        return String.format("[ID:%03d] %-15s | PC:%02d | Pri:%d", id, nombre, programCounter, prioridad);
-    }
-    
-    // Getters necesarios
-    public int getId() { return id; }
-    public String getNombre() { return nombre; }
-    public int getPrioridad() { return prioridad; }
-    
-    public void avanzarInstruccion() {
-        this.programCounter++;
-        this.instruccionesTotales--; 
-    }
-    
-    public void setEstado(String nuevoEstado) {
-        this.estado = nuevoEstado;
-    }
-    
-    public String getEstado() {
-        return estado;
-    }
-    
-    public int getInstruccionesTotales() {
-        return instruccionesTotales;
-    }
-    
     public void ejecutar() {
         if (this.instruccionesTotales > 0) {
-            this.instruccionesTotales--;  // <--- Aquí estaba el detalle
+            this.instruccionesTotales--; // Resta la instrucción
+            this.pc++;                   // Sube el Program Counter 
+            this.mar++;                  // Sube el MAR 
         }
     }
 
-    public int getInstruccionesRestantes() {
-        return this.instruccionesTotales; // <--- Y aquí también
+    public void envejecer() {
+        if (this.deadline > 0) {
+            this.deadline--;
+        }
+    }
+
+    // --- GETTERS Y SETTERS ---
+    public String getId() { return id; }
+    public String getNombre() { return nombre; }
+    
+    public String getStatus() { return status; }
+    public void setEstado(String status) { this.status = status; } 
+    
+    public int getPc() { return pc; }
+    public int getMar() { return mar; }
+    public int getPrioridad() { return prioridad; }
+    public int getDeadline() { return deadline; }
+    public int getInstruccionesRestantes() { return instruccionesTotales; }
+
+    @Override
+    public String toString() {
+        return "[" + id + "] " + nombre + " | Pri: " + prioridad + " | DL: " + deadline;
     }
 }
